@@ -2836,7 +2836,7 @@ do
             position = udim2_new(0,1,0,0),
             zindex = colorpicker.zindex + 10,
             callback = function(bool)
-                if not colorpicker.selected or colorpicker.selected.flag == 'theme_accent' then return end
+                if not colorpicker.selected or colorpicker.selected.flag == 'ThemeAccent' then return end
                 
                 colorpicker.selected.useaccent = bool
 
