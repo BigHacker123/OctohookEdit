@@ -3064,6 +3064,12 @@ do
                 watermark.lastupdate    = tick()
                 watermark.combined      = ""
 
+                local Length            = 0
+    
+                for i, v in next, watermark.text do
+                    Length += 1
+                end
+
                 for i, v in next, watermark.text do
                     if string.lower(v.type) == "fps" then
                         v.text = tostring(math_floor(library.stat.fps)) .. ' FPS'
@@ -3073,10 +3079,22 @@ do
                         v.text = tostring(math_floor(library.stat.ping)) .. ' MS'
                     end
 
-                    if i ~= #watermark.text then
-                        watermark.combined = v.text + " / "
+                    if string.lower(v.type) == "username" then
+                        v.text = tostring(game.Players.LocalPlayer.Name)
+                    end
+
+                    if string.lower(v.type) == "displayname" then
+                        v.text = tostring(game.Players.LocalPlayer.DisplayName)
+                    end
+
+                    if string.lower(v.type) == "id" then
+                        v.text = tostring(game.Players.LocalPlayer.UserId)
+                    end
+
+                    if i ~= Length then
+                        watermark.combined = string.format("%s%s / ", watermark.combined, v.text)
                     else
-                        watermark.combined = v.text
+                        watermark.combined = string.format("%s%s", watermark.combined, v.text)
                     end
                 end
 
