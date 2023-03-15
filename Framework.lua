@@ -3024,12 +3024,12 @@ do
         watermark.lastupdate = 0
         watermark.enabled = false
         watermark.objects = {}
+        watermark.combined = ""
         watermark.text = properties.text or {
-            'hyphon.cc',
-            'liamm#0223',
-            'uid 1',
-            '999ms',
-            '999 fps'
+            [1] = { type = "string", text = "Fondra.xyz" },
+            [2] = { type = "string", text = "Incognito#0666" },
+            [3] = { type = "ping", text = "999 MS" },
+            [4] = { type = "fps", text = "999 FPS" }
         }
 
         watermark.objects.background = library:create('rect', {
@@ -3050,8 +3050,7 @@ do
             Size = udim2_new(1,0,0,1),
             Parent = watermark.objects.background
         })
-
-        
+     
         watermark.objects.outline = library:create('outline', watermark.objects.background, {Theme = {['Color'] = 'Border 1'}})
         watermark.objects.outline2 = library:create('outline', watermark.objects.outline, {Theme = {['Color'] = 'Border 2'}})
 
@@ -3062,12 +3061,26 @@ do
             watermark.objects.background.Visible = watermark.enabled
 
             if tick() - watermark.lastupdate > 0.1 and watermark.enabled then
-                watermark.lastupdate = tick()
+                watermark.lastupdate    = tick()
+                watermark.combined      = ""
 
-                watermark.text[4] = tostring(math_floor(library.stat.ping)) .. 'ms'
-                watermark.text[5] = tostring(math_floor(library.stat.fps)) .. ' fps'
+                for i, v in next, watermark.text do
+                    if string.lower(v.type) == "fps" then
+                        v.text = tostring(math_floor(library.stat.fps)) .. ' FPS'
+                    end
 
-                watermark.objects.label.Text = table_concat(watermark.text, ' / ')
+                    if string.lower(v.type) == "ping" then
+                        v.text = tostring(math_floor(library.stat.ping)) .. ' MS'
+                    end
+
+                    if i ~= #watermark.text then
+                        watermark.combined = v.text + " / "
+                    else
+                        watermark.combined = v.text
+                    end
+                end
+
+                watermark.objects.label.Text = watermark.combined
                 watermark.objects.background.Size = udim2_new(0, watermark.objects.label.TextBounds.X + 10, 0, 18) 
             end
         end)
