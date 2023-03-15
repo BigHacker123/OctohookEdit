@@ -3060,7 +3060,7 @@ do
 
             watermark.objects.background.Visible = watermark.enabled
 
-            if tick() - watermark.lastupdate > 0.1 and watermark.enabled then
+            if tick() - watermark.lastupdate > 0.25 and watermark.enabled then
                 watermark.lastupdate    = tick()
                 watermark.combined      = ""
 
