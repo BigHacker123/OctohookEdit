@@ -1,9 +1,8 @@
 --[[
     /------------ [ octohook.xyz ui library ] ------------\
     | fully by liamm#0223 (561301972293255180)            |
-    | last modified 12/17/2022                            |
-    | if used, give credit.                               |
-    |                                                     |
+    | edited by Incognito#0666 (911566820710948954)       |              
+    | last modified 3/17/2023                             |
     \-----------------------------------------------------/
 
 
@@ -200,8 +199,8 @@ local library = {
     rainbows    = {},
     notifs      = {},
     debugmode   = false,
-    cheatname   = 'hyphon',
-    gamename    = 'apocalypse rising 2',
+    cheatname   = 'Cheat',
+    gamename    = 'Game',
     themes      = themes,
     theme       = themes.default,
     signal      = loadstring(game:HttpGetAsync('https://raw.githubusercontent.com/lncoognito/Octohook/main/Signal.lua'))(),
@@ -1540,14 +1539,22 @@ do
         function library.meta.options.dropdown:new(properties)
             local dropdown = library:create('option', properties, self, 'dropdown')
             dropdown.multi = properties.multi or false
-            dropdown.searching = false
-            dropdown.maxvalues = 10
-            dropdown.values = {}
             dropdown.selected = properties.multi and {} or ''
+            dropdown.required = properties.required or false
+            dropdown.default = properties.default or (properties.multi and {} or '')
+            dropdown.values = {}
 
-            for i,v in next, properties.values or {} do
+            for i, v in next, properties.values or {} do
                 dropdown:add_value(v)
             end 
+
+            if typeof(dropdown.default) == "table" then
+                for i, v in next, dropdown.default do 
+                    dropdown.selected[v] = true
+                end
+            else
+                dropdown.selected = dropdown.default
+            end
 
             dropdown.objects.background = library:create('rect', {
                 Theme = {['Color'] = 'Option Background'},
@@ -1603,39 +1610,6 @@ do
                     library.dropdown.objects.background.Parent = dropdown.objects.container
                     library.dropdown.objects.background.Visible = true
                     dropdown:update()
-
-                    if inputservice:IsKeyDown(Enum.KeyCode.LeftControl) then
-
-                        local status_text = dropdown.objects.status_text
-
-                        dropdown.searching = true
-                        status_text.Text = ''
-                        
-                        local c; c = library:connection(inputservice.InputBegan, function(input)
-                            if input.UserInputType ~= Enum.UserInputType.Keyboard or not input.KeyCode then return end
-                            if table_find(library.blacklisted_keys, input.KeyCode) then return end
-                
-                            local caps = inputservice:IsKeyDown(Enum.KeyCode.LeftShift) or inputservice:IsKeyDown(Enum.KeyCode.RightShift)
-                            local keystring = library.key_strings[input.KeyCode]
-                            local keystring = (keystring == nil and (caps and input.KeyCode.Name or input.KeyCode.Name:lower()) or (caps and keystring[2] or keystring[1]))
-                
-                            if input.KeyCode == Enum.KeyCode.Backspace then
-                                status_text.Text = status_text.Text:sub(0,-2)
-                            elseif input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.Escape or input.UserInputType == Enum.UserInputType.MouseButton1 then
-                                c:Disconnect()
-                                dropdown.searching = false
-                                status_text.Text = dropdown.text
-                                return
-                            else
-                                status_text.Text = status_text.Text .. keystring
-                            end
-        
-                            dropdown:update()
-        
-                        end)
-        
-                    end
-
                 end
             end)
 
@@ -1655,9 +1629,13 @@ do
             dropdown.objects.border_outer   = library:create('outline', dropdown.objects.border_mid,   {['Theme'] = {['Color'] = 'Border 1'}})
             
             table_insert(self.options, dropdown)
+
             if properties.flag ~= nil then
                 library.flags[properties.flag] = dropdown.selected
             end
+
+            dropdown:update_text()
+            
             return self._type == 'option' and self or dropdown
         end
 
@@ -1672,17 +1650,21 @@ do
 
         function library.meta.options.dropdown:add_value(value)
             table_insert(self.values, value)
+
             if self.multi then
                 self.selected[value] = false
             end
+
             self:update()
         end
 
         function library.meta.options.dropdown:remove_value(value)
             table_remove(self.values, table_find(self.values, value))
+            
             if self.multi then
                 self.selected[value] = nil
             end
+
             self:update()
         end
 
@@ -1697,6 +1679,7 @@ do
                         table_insert(full_text, v)
                     end
                 end
+
                 full_text = table_concat(full_text, ', ') or ''
             end
 
@@ -1738,11 +1721,6 @@ do
 
                 local selected = ((dropdown.multi and dropdown.selected[value] == true) or (not dropdown.multi and dropdown.selected == value))
 
-                if not selected and dropdown.searching and not value:match(dropdown.objects.status_text.Text) then
-                    objects.container.Visible = false
-                    continue
-                end
-
                 objects.label.Text = value
                 objects.label.Theme = {['Color'] = (selected and 'Option Text 1' or 'Option Text 2')}
                 objects.container.Transparency = selected and 0.1 or 0
@@ -1754,11 +1732,23 @@ do
         
                 library:connection(objects.container.MouseButton1Down, function()
                     if dropdown.multi then
+                        local All = 0
+
                         dropdown.selected[value] = not dropdown.selected[value]
+
+                        for i, v in next, dropdown.selected do
+                            if v then
+                                All += 1
+                            end
+                        end
+
+                        if All == 0 then dropdown.selected[value] = true end
+
                         objects.label.Theme = {['Color'] = dropdown.selected[value] and 'Option Text 1' or 'Option Text 2'}
                         objects.container.Transparency = dropdown.selected[value] and 0.15 or 0
                     else
-                        dropdown.selected = dropdown.selected ~= value and value or nil
+                        dropdown.selected = dropdown.selected ~= value and value or (dropdown.required and dropdown.selected or nil)
+
                         for i,v in next, library.dropdown.objects.values do
                             v.label.Theme = {['Color'] = (v == objects and dropdown.selected == value) and 'Option Text 1' or 'Option Text 2'}
                             v.container.Transparency = (v == objects and dropdown.selected == value) and 0.15 or 0
@@ -1770,13 +1760,12 @@ do
                     if dropdown.callback ~= nil then
                         dropdown.callback(dropdown.selected)
                     end
-                    if not dropdown.searching then
-                        dropdown:update_text()
-                    else
-                        dropdown:update()
-                    end
+
+                    dropdown:update()
                 end, library.dropdown.connections)
             end
+
+            dropdown:update_text()
         end
 
     end
@@ -3026,7 +3015,7 @@ do
         watermark.objects = {}
         watermark.combined = ""
         watermark.text = properties.text or {
-            [1] = { type = "string", text = "Fondra.xyz" },
+            [1] = { type = "string", text = library.cheatname },
             [2] = { type = "string", text = "Incognito#0666" },
             [3] = { type = "ping", text = "999 MS" },
             [4] = { type = "fps", text = "999 FPS" }
@@ -3089,6 +3078,10 @@ do
 
                     if string.lower(v.type) == "id" then
                         v.text = tostring(game.Players.LocalPlayer.UserId)
+                    end
+
+                    if string.lower(v.type) == "game" then
+                        v.text = tostring(library.gamename)
                     end
 
                     if i ~= Length then
